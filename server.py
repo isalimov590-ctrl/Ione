@@ -4,11 +4,25 @@ import random
 import sqlite3
 import base64
 from typing import List, Dict
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 
-app = FastAPI(title="Ione Messenger API")
+app = FastAPI(title="Ione Messenger Alpha")
+
+# Enable CORS for cross-platform clients
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Create uploads directory
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # --- Database Setup ---
 DB_PATH = "ione.db"
@@ -120,13 +134,24 @@ async def websocket_endpoint(websocket: WebSocket, user_id: int):
         while True:
             data = await websocket.receive_json()
             # data format: {"content": "...", "type": "text/image/voice"}
-            
+            content = data.get("content")
+            msg_type = data.get("type", "text")
+
+            # Handle file storage for images/voice to avoid DB bloating
+            if msg_type in ["image", "voice"]:
+                file_ext = "png" if msg_type == "image" else "wav"
+                filename = f"{uuid.uuid4()}.{file_ext}"
+                filepath = os.path.join(UPLOAD_DIR, filename)
+                with open(filepath, "wb") as f:
+                    f.write(base64.b64decode(content))
+                content = f"/uploads/{filename}" # Store URL path instead of base64
+
             # Save to DB
             conn = sqlite3.connect(DB_PATH)
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT INTO messages (sender_id, content, msg_type) VALUES (?, ?, ?)",
-                (user_id, data.get("content"), data.get("type", "text"))
+                (user_id, content, msg_type)
             )
             conn.commit()
             

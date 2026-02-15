@@ -145,9 +145,13 @@ class IoneClient:
         msg_content = ft.Text(data["content"], color=ft.Colors.WHITE)
         
         if data["type"] == "image":
-            # Simple Base64 image display
+            # Image display from URL or Base64
+            img_src = data["content"]
+            if img_src.startswith("/uploads/"):
+                img_src = f"{API_URL}{img_src}"
+            
             try:
-                msg_content = ft.Image(src_base64=data["content"], width=200, border_radius=10)
+                msg_content = ft.Image(src=img_src, width=250, border_radius=10, fit=ft.ImageFit.CONTAIN)
             except:
                 msg_content = ft.Text("[Error loading image]")
 

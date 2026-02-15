@@ -1,0 +1,20 @@
+app:
+  name: Ione
+  package: im.manus.ione
+  version: 0.1.0-alpha
+  main: client.py
+
+android:
+  permissions:
+    - INTERNET
+    - READ_EXTERNAL_STORAGE
+    - WRITE_EXTERNAL_STORAGE
+    - RECORD_AUDIO
+  build_number: 1
+
+windows:
+  product_name: Ione Messenger
+  executable_name: Ione
+
+linux:
+  executable_name: ione

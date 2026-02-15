@@ -1,0 +1,7 @@
+flet
+fastapi
+uvicorn
+websockets
+requests
+pydantic
+python-multipart
